@@ -5,8 +5,7 @@
 			<template>
 				<v-expansion-panel>
 					<v-expansion-panel-content v-for="(value, key) in cryptos" :key="key"
-						class="purple white--text title font-weight-light">
-						
+						class="purple white--text title font-weight-light" @click.native="getData(key, 'USD')">
 						<div slot="header">
 							<span class="left">{{ key }}</span>
 							<span class="right">${{ value.USD }}</span>
@@ -14,14 +13,12 @@
 						<v-card class="body-1 white black--text">
 							<!--We are using the LineChart component imported below in the script and 
 								also setting the chart-data prop to the datacollection object-->
-							<line-chart :chart-data="datacollection"></line-chart>
-							<v-card-text>Here a chart will be placed.</v-card-text>
+							<line-chart :chart-data="datacollection[key]"></line-chart>
 						</v-card>
 					</v-expansion-panel-content>
 				</v-expansion-panel>
 			</template>
 		</v-layout>
-		<line-chart :chart-data="datacollection"></line-chart>
 		<v-footer class="body-2 caption footer" fixed>
 			<p class="text-md-center wide">Powered by ActiveWizards &copy; {{ new Date().getFullYear() }}</p>
 		</v-footer>
@@ -29,9 +26,13 @@
 </template>
 
 <script>
+
 import axios from 'axios'
 import moment from 'moment'
 import LineChart from './components/LineChart'
+import cc from 'cryptocompare';
+
+import { timeConverter } from './helpers.js';
 
 
 export default {
@@ -41,15 +42,12 @@ export default {
 		cryptos: [],
 		errors: [],
 		historicalData: [],
-		datacollection: null,
+		datacollection: {},
 		open: null,
 		close: null
 	}),
 	
   	created () {
-		
-      	//this.fillData()
-		
 		axios.get('https://min-api.cryptocompare.com/data/pricemulti?fsyms=BTC,ETH,IOT,XRP,EOS,AION,TRX&tsyms=USD')
 			.then(response => {
 				this.cryptos = response.data
@@ -57,29 +55,36 @@ export default {
 			.catch(e => {
 				this.errors.push(e)
 			});
-		this.fetchData()
+		this.collectData();
 	},
     mounted () {
-    	this.fillData()
+    	
+	},
+	computed: {
+		chartData: () => {
+			
+		}
 	},
 	methods: {
-		fillData () {
-			console.log('here')
-			// for btc/usd
-			const endpoint = 'https://min-api.cryptocompare.com/data/histoday?fsym=BTC&tsym=USD&limit=100&aggregate=3&e=CCCAGG';
+		click() {
+			console.log('click');
+		},
+		getData (fsym, tsym) {
+			// about last 6 month
+			const endpoint = `https://min-api.cryptocompare.com/data/histoday?fsym=${fsym}&tsym=${tsym}&limit=35&aggregate=5&e=CCCAGG`;
 			axios.get(endpoint)
 				.then(response => {
 					this.historicalData = response.data.Data;
 					
-					let timeResult = this.historicalData.map(a => a.time); //moment().format('L')
+					let timeResult = this.historicalData.map(a => timeConverter(a.time).slice(0,11) );
 					let openPosition = this.historicalData.map(a => a.open);
 					let closePosition = this.historicalData.map(a => a.close);
-
+					
 					this.time = timeResult;
 					this.open = openPosition;
 					this.close = closePosition;
-					
-					this.datacollection = {
+
+					this.datacollection[fsym] = {
 						labels: this.time,
 						datasets: [
 							{
@@ -93,23 +98,24 @@ export default {
 								data: this.close
 							}
 						]
-					}
+					}					
+					console.log(this.datacollection[fsym].labels)
 				})
 				.catch(e => {
 					this.errors.push(e)
 				});
 		},
-		
-		addExpenses () {
-		
-		},
-		
-		fetchData () {
-		
+		collectData () {
+			this.getData('BTC', 'USD');
+			this.getData('ETH', 'USD');
+			this.getData('IOT', 'USD');
+			this.getData('XRP', 'USD');
+			this.getData('EOS', 'USD');
+			this.getData('AION', 'USD');
+			this.getData('TRX', 'USD');
 		}
     }
 }
-
 	
 </script>
 
@@ -156,4 +162,9 @@ span.left {
 span.right {
 	float:right;
 }
+/* charts */
+#line-chart {
+	height: 400px !important;
+}
+
 </style>

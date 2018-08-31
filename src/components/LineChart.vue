@@ -34,6 +34,7 @@
 		},
 		mounted () {
 			// this.chartData is created in the mixin
+			console.log(this.chartData)
 			this.renderChart(this.chartData, this.options)
 		}
 	}
