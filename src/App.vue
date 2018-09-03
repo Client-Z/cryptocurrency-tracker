@@ -5,7 +5,7 @@
 			<template>
 				<v-expansion-panel>
 					<v-expansion-panel-content v-for="(value, key) in cryptos" :key="key"
-						class="purple white--text title font-weight-light" @click.native="getData(key, 'USD')">
+						class="purple white--text title font-weight-light">
 						<div slot="header">
 							<span class="left">{{ key }}</span>
 							<span class="right">${{ value.USD }}</span>
@@ -84,7 +84,8 @@ export default {
 					this.open = openPosition;
 					this.close = closePosition;
 
-					this.datacollection[fsym] = {
+					// fix reactivity, because here we create new properties and they needs vue-setters and getters for reactivity
+					this.$set(this.datacollection, fsym, {
 						labels: this.time,
 						datasets: [
 							{
@@ -98,7 +99,7 @@ export default {
 								data: this.close
 							}
 						]
-					}					
+					})
 					console.log(this.datacollection[fsym].labels)
 				})
 				.catch(e => {
